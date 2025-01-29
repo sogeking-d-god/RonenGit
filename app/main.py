@@ -45,7 +45,6 @@ def main():
         
     else:
         raise RuntimeError(f"Unknown command #{command}")
-        //hi
 
 
 if __name__ == "__main__":
