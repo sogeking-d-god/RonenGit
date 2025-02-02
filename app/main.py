@@ -42,6 +42,7 @@ def main():
         os.makedirs(f".git/objects/{sha1[:2]}", exist_ok=True)
         with open(f".git/objects/{sha1[:2]}/{sha1[2:]}", "wb") as f:
             f.write(zlib.compress(store))
+        print(sha1)
         
     else:
         raise RuntimeError(f"Unknown command #{command}")
