@@ -43,6 +43,22 @@ def main():
         with open(f".git/objects/{sha1[:2]}/{sha1[2:]}", "wb") as f:
             f.write(zlib.compress(store))
         print(sha1)
+    
+    elif command == "ls-tree" and sys.argv[2] == "--name-only":
+        obj_name = sys.argv[3]
+        with open(f".git/objects/{obj_name[:2]}/{obj_name[2:]}", "rb") as f:
+            raw = zlib.decompress(f.read())
+            list = raw.split(b"\0")
+            header= list[0].split(b" ",maxsplit=1)
+            if header[0] != b"tree":
+                print("Not a tree object")
+                return
+            for i in range(1, len(list)-1):
+                if i!=2 :
+                    name = list[i].split(b" ",maxsplit=1)
+                    print(name[1].decode(encoding="utf-8"))
+    
+    
         
     else:
         raise RuntimeError(f"Unknown command #{command}")
