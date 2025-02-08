@@ -58,7 +58,45 @@ def main():
                     name = list[i].split(b" ",maxsplit=1)
                     print(name[1].decode(encoding="utf-8"))
     
-    
+    elif command == "ls-tree":
+        obj_name = sys.argv[2]
+        with open(f".git/objects/{obj_name[:2]}/{obj_name[2:]}", "rb") as f:
+            raw = zlib.decompress(f.read())
+            list = []
+            chunk = b""
+            flag = False
+            for i in range(0, len(raw)):
+                
+                if raw[i] == 0  and flag:
+                    list.append(chunk)
+                    chunk = b""
+                    flag = False
+                else:
+                    chunk += bytes([raw[i]])
+                if raw[i] == 32:
+                    flag = True
+            header= list[0].split(b" ",maxsplit=1)
+            if header[0] != b"tree":
+                print("Not a tree object")
+                return
+            ls = []
+            for i in range(1, len(list)):
+                if i==1:
+                    ls.append( list[i].split(b" ",maxsplit=1))
+                else:
+                    l = list[i]
+                    sha = l[0:20]
+                    ls[i-2].append(sha)
+                    if i!=len(list)-1:
+                        mdName = l[20:]
+                        ls.append( mdName.split(b" ",maxsplit=1))
+                
+            for obj in ls:
+                if(obj[0] == b"40000"):
+                    tb = "tree" #tree/bloob
+                else:
+                    tb = "blob"
+                print(f"{obj[0].decode()} {tb} {obj[2].hex()}\t{obj[1].decode()}")
         
     else:
         raise RuntimeError(f"Unknown command #{command}")
