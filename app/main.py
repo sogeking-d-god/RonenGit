@@ -67,14 +67,16 @@ def main():
             flag = False
             for i in range(0, len(raw)):
                 
-                if raw[i] == 0  and flag:
+                if raw[i] == ord("\0")  and flag:
                     list.append(chunk)
                     chunk = b""
                     flag = False
                 else:
                     chunk += bytes([raw[i]])
-                if raw[i] == 32:
+                if raw[i] == ord(" "):
                     flag = True
+            list.append(chunk)
+
             header= list[0].split(b" ",maxsplit=1)
             if header[0] != b"tree":
                 print("Not a tree object")
@@ -86,7 +88,7 @@ def main():
                 else:
                     l = list[i]
                     sha = l[0:20]
-                    ls[i-2].append(sha)
+                    ls[-1].append(sha)
                     if i!=len(list)-1:
                         mdName = l[20:]
                         ls.append( mdName.split(b" ",maxsplit=1))
@@ -94,6 +96,7 @@ def main():
             for obj in ls:
                 if(obj[0] == b"40000"):
                     tb = "tree" #tree/bloob
+                    obj[0] = b"040000"
                 else:
                     tb = "blob"
                 print(f"{obj[0].decode()} {tb} {obj[2].hex()}\t{obj[1].decode()}")
