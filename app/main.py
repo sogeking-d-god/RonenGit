@@ -19,20 +19,11 @@ def tree_w(dir_path):
             # Process files
             if os.path.isfile(full_path):  # If it's a file
 
-            #         file_path = sys.argv[3]
-            # with open(file_path, "rb") as f:
-            #     content = f.read()
-            # header = f"blob {len(content)}\0".encode()
-            # store = header + content
-            # sha1 = hashlib.sha1(store).hexdigest()
-            # os.makedirs(f".git/objects/{sha1[:2]}", exist_ok=True)
-            # with open(f".git/objects/{sha1[:2]}/{sha1[2:]}", "wb") as f:
-            #     f.write(zlib.compress(store))
-            # print(sha1)
-        
-
                 with open(full_path, "rb") as f:
                     content = f.read()
+
+                # Normalize Windows line endings to LF
+                content = content.replace(b"\r\n", b"\n")
 
                 # Store file as a blob
                 header = f"blob {len(content)}\0".encode()
@@ -111,6 +102,10 @@ def main():
         file_path = sys.argv[3]
         with open(file_path, "rb") as f:
             content = f.read()
+
+        # Normalize Windows line endings to LF
+        content = content.replace(b"\r\n", b"\n")
+
         header = f"blob {len(content)}\0".encode()
         store = header + content
         sha1 = hashlib.sha1(store).hexdigest()
