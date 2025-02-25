@@ -4,6 +4,81 @@ import zlib
 import hashlib
 
 
+def tree_w(dir_path):
+    
+    obj_sha1 = []    # To store the sha1 for all objects in the current directory
+
+
+    # Process files and subdirectories in the current directory
+    for file_or_dir in os.listdir(dir_path):
+
+
+        # Skip .git directory
+        if file_or_dir != ".git":
+            full_path = os.path.join(dir_path, file_or_dir)
+            # Process files
+            if os.path.isfile(full_path):  # If it's a file
+
+            #         file_path = sys.argv[3]
+            # with open(file_path, "rb") as f:
+            #     content = f.read()
+            # header = f"blob {len(content)}\0".encode()
+            # store = header + content
+            # sha1 = hashlib.sha1(store).hexdigest()
+            # os.makedirs(f".git/objects/{sha1[:2]}", exist_ok=True)
+            # with open(f".git/objects/{sha1[:2]}/{sha1[2:]}", "wb") as f:
+            #     f.write(zlib.compress(store))
+            # print(sha1)
+        
+
+                with open(full_path, "rb") as f:
+                    content = f.read()
+
+                # Store file as a blob
+                header = f"blob {len(content)}\0".encode()
+                store = header + content
+                sha1 = hashlib.sha1(store).hexdigest()
+
+                # Save blob to .git/objects
+                os.makedirs(f".git/objects/{sha1[:2]}", exist_ok=True)
+                with open(f".git/objects/{sha1[:2]}/{sha1[2:]}", "wb") as f:
+                    f.write(zlib.compress(store))
+
+                # Add file's sha1 to the list
+                obj_sha1.append((file_or_dir, sha1, b"100644"))
+
+            # Process subdirectories (handle them as tree objects)
+            else:
+                dir_sha1 = tree_w(full_path)  # Recursively process subdirectories
+                obj_sha1.append((file_or_dir, dir_sha1, b"040000"))  # Add the directory's sha1 to the list
+            
+
+
+    # Now, create the tree object for the current directory
+    tree_object = b""
+    
+    obj_sha1 = sorted(obj_sha1, key=lambda x: x[0])  # Sort objects by name
+
+    for name, sha1, mode in obj_sha1:
+        tree_object += mode + b" " + name.encode() + b"\0" + bytes.fromhex(sha1)
+
+    
+    # Create and store the tree object
+    header = f"tree {len(tree_object)}\0".encode()
+    store = header + tree_object
+    sha1 = hashlib.sha1(store).hexdigest()
+
+    # Save tree to .git/objects
+    os.makedirs(f".git/objects/{sha1[:2]}", exist_ok=True)
+    with open(f".git/objects/{sha1[:2]}/{sha1[2:]}", "wb") as f:
+        f.write(zlib.compress(store))
+
+    
+    # Return the sha1 of the current directory's tree
+    return sha1
+
+
+
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!", file=sys.stderr)
@@ -92,7 +167,7 @@ def main():
                     if i!=len(list)-1:
                         mdName = l[20:]
                         ls.append( mdName.split(b" ",maxsplit=1))
-                
+
             for obj in ls:
                 if(obj[0] == b"40000"):
                     tb = "tree" #tree/bloob
@@ -100,10 +175,16 @@ def main():
                 else:
                     tb = "blob"
                 print(f"{obj[0].decode()} {tb} {obj[2].hex()}\t{obj[1].decode()}")
+    
+    elif command == "write-tree":
+            print(f"Stored tree: {tree_w(os.getcwd())}")
         
+
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
 
+
 if __name__ == "__main__":
     main()
+
