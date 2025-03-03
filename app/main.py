@@ -2,7 +2,63 @@ import sys
 import os
 import zlib
 import hashlib
+import time
 
+def commit_tree(tree_sha1, message="Initial commit"):
+
+    # Get author and committer info
+    author_name = os.getenv("GIT_AUTHOR_NAME", "Your Name")
+    author_email = os.getenv("GIT_AUTHOR_EMAIL", "your.email@example.com")
+
+    # Get current timestamp in Git format
+    timestamp = int(time.time())
+    timezone_offset = time.strftime('%z')
+    author_info = f"{author_name} <{author_email}> {timestamp} {timezone_offset}"
+
+    # Read the current branch from .git/HEAD
+    head_path = ".git/HEAD" 
+    with open(head_path, "r") as f:
+        ref_line = f.read().strip()
+        if ref_line.startswith("ref: "):
+            branch_ref = ref_line[5:]  # Extract refs/heads/<branch>
+        else:
+            branch_ref = None  # Detached HEAD (direct SHA-1 reference)
+            print("error: Detached HEAD")
+            return 
+  
+    # Read parent commit from the branch reference (if it exists)
+    parent_sha1 = None
+    branch_path = f".git/{branch_ref}"
+    if os.path.exists(branch_path): # if not new branch
+        with open(branch_path, "r") as f:
+            parent_sha1 = f.read().strip()
+
+    # Construct commit content
+    commit_content = f"tree {tree_sha1}\n"
+    if parent_sha1:
+        commit_content += f"parent {parent_sha1}\n"
+    commit_content += f"author {author_info}\n"
+    commit_content += f"committer {author_info}\n\n"
+    commit_content += f"{message}\n"
+
+    # Compute SHA-1 hash
+    store = f"commit {len(commit_content)}\0".encode() + commit_content.encode()
+    commit_sha1 = hashlib.sha1(store).hexdigest()
+
+    # Save commit object
+    obj_path = f".git/objects/{commit_sha1[:2]}/{commit_sha1[2:]}"
+    os.makedirs(os.path.dirname(obj_path), exist_ok=True)
+    with open(obj_path, "wb") as f:
+        f.write(zlib.compress(store))
+
+    # Update branch reference to point to the new commit
+    with open(f".git/{branch_ref}", "w") as f:
+        f.write(commit_sha1 + "\n")
+
+    print("message: \t" + message)
+    return commit_sha1  # Return the commit SHA-1
+
+    
 
 def tree_w(dir_path):
     
@@ -74,12 +130,6 @@ def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!", file=sys.stderr)
 
-    
-
-
-
-
-
     # Uncomment this block to pass the first stage
     
     command = sys.argv[1]
@@ -87,6 +137,7 @@ def main():
         os.mkdir(".git")
         os.mkdir(".git/objects")
         os.mkdir(".git/refs")
+        os.mkdir(".git/refs/heads")
         with open(".git/HEAD", "w") as f:
             f.write("ref: refs/heads/main\n")
         print("Initialized git directory")
@@ -174,6 +225,12 @@ def main():
     elif command == "write-tree":
             print(f"Stored tree: {tree_w(os.getcwd())}")
         
+    elif command == "commit-tree":
+        if len(sys.argv) == 5 and sys.argv[3] == "-m":  
+            print("commit sha: \t" + commit_tree(sys.argv[2], sys.argv[4]) ) # With message
+        else: 
+            print("commit sha: \t" + commit_tree(sys.argv[2]) ) # Without message
+
 
     else:
         raise RuntimeError(f"Unknown command #{command}")
@@ -182,4 +239,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
