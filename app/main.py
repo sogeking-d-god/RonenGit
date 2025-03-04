@@ -211,9 +211,8 @@ def main():
                         ls.append( mdName.split(b" ",maxsplit=1))
 
             for obj in ls:
-                if(obj[0] == b"40000"):
+                if(obj[0] == b"040000"):
                     tb = "tree" #tree/bloob
-                    obj[0] = b"040000"
                 else:
                     tb = "blob"
                 print(f"{obj[0].decode()} {tb} {obj[2].hex()}\t{obj[1].decode()}")
