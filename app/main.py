@@ -211,8 +211,9 @@ def main():
                         ls.append( mdName.split(b" ",maxsplit=1))
 
             for obj in ls:
-                if(obj[0] == b"040000"):
+                if(obj[0] == b"040000" or obj[0] == b"40000"):
                     tb = "tree" #tree/bloob
+                    obj[0] = "040000"
                 else:
                     tb = "blob"
                 print(f"{obj[0].decode()} {tb} {obj[2].hex()}\t{obj[1].decode()}")
@@ -223,8 +224,10 @@ def main():
     elif command == "commit-tree":
         if len(sys.argv) == 5 and sys.argv[3] == "-m":  
             print("commit sha: \t" + commit_tree(sys.argv[2], sys.argv[4]) ) # With message
-        else: 
+        elif len(sys.argv) == 3: 
             print("commit sha: \t" + commit_tree(sys.argv[2]) ) # Without message
+        else:
+            print("Invalid command")
 
 
     else:
